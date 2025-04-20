@@ -1,14 +1,15 @@
 /**
  * -----------------------------------------------------------------------------
  * TelegramRemote.java
- * by drazz
+ * by drazz & Brokoli5191
  * -----------------------------------------------------------------------------
  * Description: Main class for the TelegramRemote plugin, enabling integration
  * of Telegram with Bukkit servers for server administration.
  * Usage: /telegramremote <command>
  * -----------------------------------------------------------------------------
  * Version: 1.0.1
- * Last Updated: January 20, 2024
+ * Last Updated: January 20, 2024 (drazz)
+ *Last Updated: April 20, 2025
  * -----------------------------------------------------------------------------
  */
 package me.drazz.telegramremote;
