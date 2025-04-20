@@ -27,12 +27,14 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import java.io.File;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 public final class TelegramRemote extends JavaPlugin {
 
     private Main_BOT telegramBot = new Main_BOT();
     private static TelegramRemote instance;
     private static YamlConfiguration messagesConfig;
+    private TelegramLogHandler logHandler;
 
     @Override
     public void onEnable() {
@@ -54,12 +56,14 @@ public final class TelegramRemote extends JavaPlugin {
             e.printStackTrace();
         }
         
+        // Setup log handler
+        setupLogHandler();
+        
         telegramBot.bot_started_notif();
 
         if (getConfig().getBoolean("update.enable")) {
             String currentVersion = getDescription().getVersion();
-            me.drazz.telegramremote.CheckUpdate checkUpdate = 
-                new me.drazz.telegramremote.CheckUpdate(this, currentVersion);
+            CheckUpdate checkUpdate = new CheckUpdate(this, currentVersion);
             checkUpdate.checkForUpdateAsync();
         }
 
@@ -68,7 +72,33 @@ public final class TelegramRemote extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Remove the log handler
+        if (logHandler != null) {
+            Logger rootLogger = getLogger().getParent();
+            rootLogger.removeHandler(logHandler);
+        }
+        
         getLogger().info("Plugin disabled successfully!");
+    }
+
+    /**
+     * Sets up the Telegram log handler to capture server logs
+     */
+    private void setupLogHandler() {
+        logHandler = new TelegramLogHandler(this, telegramBot);
+        
+        // Add our handler to the root logger to capture all logs
+        Logger rootLogger = getLogger().getParent();
+        rootLogger.addHandler(logHandler);
+    }
+    
+    /**
+     * Reloads the log handler configuration
+     */
+    public void reloadLogHandler() {
+        if (logHandler != null) {
+            logHandler.loadConfig();
+        }
     }
 
     public void loadMessagesConfig() {
@@ -92,5 +122,9 @@ public final class TelegramRemote extends JavaPlugin {
 
     public static TelegramRemote getInstance() {
         return instance;
+    }
+    
+    public TelegramLogHandler getLogHandler() {
+        return logHandler;
     }
 }
