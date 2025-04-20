@@ -9,7 +9,7 @@
  * -----------------------------------------------------------------------------
  * Version: 1.0.1
  * Last Updated: January 20, 2024 (drazz)
- *Last Updated: April 20, 2025
+ * Last Updated: April 20, 2025 (Brokoli5191)
  * -----------------------------------------------------------------------------
  */
 package me.drazz.telegramremote;
@@ -18,6 +18,8 @@ import me.drazz.telegramremote.bot.Main_BOT;
 import me.drazz.telegramremote.commands.TR_CMD;
 import me.drazz.telegramremote.commands.TR_TabCompleter;
 import me.drazz.telegramremote.events.Notifications_Event;
+import me.drazz.telegramremote.utils.CheckUpdate; // Hinzugefügt: Import für CheckUpdate
+
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -29,7 +31,7 @@ import java.util.Objects;
 
 public final class TelegramRemote extends JavaPlugin {
 
-    Main_BOT telegramBot = new Main_BOT();
+    private Main_BOT telegramBot = new Main_BOT();
     private static TelegramRemote instance;
     private static YamlConfiguration messagesConfig;
 
@@ -46,14 +48,15 @@ public final class TelegramRemote extends JavaPlugin {
 
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(new Main_BOT());
+            botsApi.registerBot(telegramBot); // Geändert: Verwende die bereits erstellte telegramBot-Instanz
             getLogger().info("Bot launched successfully!");
         } catch (Exception e) {
             getLogger().info("Bot error!");
             e.printStackTrace();
         }
+        
         telegramBot.bot_started_notif();
-        bot.execute(new SendMessage(chatId, newLogLine));
+        // Die fehlerhafte Zeile wurde entfernt: bot.execute(new SendMessage(chatId, newLogLine));
 
         if (getConfig().getBoolean("update.enable")) {
             String currentVersion = getDescription().getVersion();
@@ -66,6 +69,8 @@ public final class TelegramRemote extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Eventuell hier eine Benachrichtigung hinzufügen, wenn der Bot heruntergefahren wird
+        getLogger().info("Plugin disabled successfully!");
     }
 
     public void loadMessagesConfig() {
@@ -90,5 +95,4 @@ public final class TelegramRemote extends JavaPlugin {
     public static TelegramRemote getInstance() {
         return instance;
     }
-
 }
