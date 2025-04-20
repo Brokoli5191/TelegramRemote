@@ -8,6 +8,7 @@ telegram:
     enable_bot_started: true #Notification that the bot is running #Уведомление о запуске бота.
     enable_update: true #Update notification (TG) #Уведомление о обновлении (ТГ)
     enable_server_logs: false #Send server logs to Telegram chat #Отправлять логи сервера в Telegram чат
+    log_mode: IMPORTANT_ONLY #Log mode: DISABLED, IMPORTANT_ONLY, ALL_LOGS #Режим логирования: DISABLED, IMPORTANT_ONLY, ALL_LOGS
   rcon: #For the operation of the console and commands in the bot. #Для работы консоли и команд в боте.
     enable: true #Turn off the administrator console (Admin menu, will continue to work. RCON is required.) #Выключить консоль администратора (Админ меню, продолжит работу. RCON обязателен.).
     rcon_host: 0.0.0.0 #Local IP #Локальный IP
