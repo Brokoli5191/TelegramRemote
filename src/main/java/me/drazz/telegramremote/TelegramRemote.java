@@ -1,17 +1,3 @@
-/**
- * -----------------------------------------------------------------------------
- * TelegramRemote.java
- * by drazz & Brokoli5191
- * -----------------------------------------------------------------------------
- * Description: Main class for the TelegramRemote plugin, enabling integration
- * of Telegram with Bukkit servers for server administration.
- * Usage: /telegramremote <command>
- * -----------------------------------------------------------------------------
- * Version: 1.0.1
- * Last Updated: January 20, 2024 (drazz)
- * Last Updated: April 20, 2025 (Brokoli5191)
- * -----------------------------------------------------------------------------
- */
 package me.drazz.telegramremote;
 
 import me.drazz.telegramremote.bot.Main_BOT;
@@ -51,16 +37,15 @@ public final class TelegramRemote extends JavaPlugin {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(telegramBot);
             getLogger().info("Bot launched successfully!");
+            
+            setupLogHandler();
+            
+            telegramBot.bot_started_notif();
         } catch (Exception e) {
-            getLogger().info("Bot error!");
+            getLogger().severe("Bot error!");
             e.printStackTrace();
         }
         
-        // Setup log handler
-        setupLogHandler();
-        
-        telegramBot.bot_started_notif();
-
         if (getConfig().getBoolean("update.enable")) {
             String currentVersion = getDescription().getVersion();
             CheckUpdate checkUpdate = new CheckUpdate(this, currentVersion);
@@ -72,7 +57,6 @@ public final class TelegramRemote extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Remove the log handler
         if (logHandler != null) {
             Logger rootLogger = getLogger().getParent();
             rootLogger.removeHandler(logHandler);
@@ -81,23 +65,39 @@ public final class TelegramRemote extends JavaPlugin {
         getLogger().info("Plugin disabled successfully!");
     }
 
-    /**
-     * Sets up the Telegram log handler to capture server logs
-     */
     private void setupLogHandler() {
-        logHandler = new TelegramLogHandler(this, telegramBot);
-        
-        // Add our handler to the root logger to capture all logs
-        Logger rootLogger = getLogger().getParent();
-        rootLogger.addHandler(logHandler);
+        try {
+            if (logHandler != null) {
+                Logger rootLogger = getLogger().getParent();
+                rootLogger.removeHandler(logHandler);
+            }
+            
+            logHandler = new TelegramLogHandler(this, telegramBot);
+            
+            Logger rootLogger = getLogger().getParent();
+            rootLogger.addHandler(logHandler);
+        } catch (Exception e) {
+            getLogger().severe("Failed to setup log handler: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
-    /**
-     * Reloads the log handler configuration
-     */
     public void reloadLogHandler() {
         if (logHandler != null) {
             logHandler.loadConfig();
+        } else {
+            setupLogHandler();
+        }
+    }
+    
+    public void setLogMode(TelegramLogHandler.LogMode mode) {
+        if (logHandler != null) {
+            logHandler.setLogMode(mode);
+        } else {
+            setupLogHandler();
+            if (logHandler != null) {
+                logHandler.setLogMode(mode);
+            }
         }
     }
 
