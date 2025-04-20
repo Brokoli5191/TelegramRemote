@@ -9,6 +9,7 @@
  * -----------------------------------------------------------------------------
  * Version: 1.0.0
  * Last Updated: January 20, 2024
+ * Updated: April 20, 2025 (Brokoli5191)
  * -----------------------------------------------------------------------------
  */
 package me.drazz.telegramremote.bot;
@@ -120,7 +121,7 @@ public class Main_BOT extends TelegramLongPollingBot {
             else if ("notifications_button".equals(data) && currentState.equals("BOT_SETTINGS")) {
                 sendNotifMenu(chatId);
             }
-            else if ("notification_op".equals(data) || "notification_started".equals(data) || "notification_update".equals(data) && currentState.equals("NOTIFICATIONS_MENU")) {
+            else if ("notification_op".equals(data) || "notification_started".equals(data) || "notification_update".equals(data) || "notification_logs".equals(data) && currentState.equals("NOTIFICATIONS_MENU")) {
                 changeNotif(chatId, data);
             }
             else if ("admin_add_button".equals(data) && currentState.equals("BOT_SETTINGS")) {
@@ -613,6 +614,18 @@ public class Main_BOT extends TelegramLongPollingBot {
         notificationUpdateButton.setCallbackData("notification_update");
         row3.add(notificationUpdateButton);
         rows.add(row3);
+        
+        // Neue Zeile für Server-Logs
+        List<InlineKeyboardButton> row4 = new ArrayList<>();
+        InlineKeyboardButton notificationLogsButton = new InlineKeyboardButton();
+        if (TelegramRemote.getInstance().getConfig().getBoolean("telegram.notifications.enable_server_logs")) {
+            notificationLogsButton.setText(TelegramRemote.getMessage("messages.telegram.admin_menu.settings_bot.notification_logs") + "✅");
+        } else {
+            notificationLogsButton.setText(TelegramRemote.getMessage("messages.telegram.admin_menu.settings_bot.notification_logs") + "❌");
+        }
+        notificationLogsButton.setCallbackData("notification_logs");
+        row4.add(notificationLogsButton);
+        rows.add(row4);
 
         inlineKeyboardMarkup.setKeyboard(rows);
 
@@ -651,10 +664,8 @@ public class Main_BOT extends TelegramLongPollingBot {
                 } else {
                     sendMsg(chatId, "Check the config is correct.");
                 }
-
-                sendNotifMenu(chatId);
-
                 break;
+                
             case "notification_started":
                 if (TelegramRemote.getInstance().getConfig().getBoolean("telegram.notifications.enable_bot_started")) {
                     TelegramRemote.getInstance().getConfig().set("telegram.notifications.enable_bot_started", false);
@@ -673,9 +684,8 @@ public class Main_BOT extends TelegramLongPollingBot {
                 } else {
                     sendMsg(chatId, "Check the config is correct.");
                 }
-
-                sendNotifMenu(chatId);
                 break;
+                
             case "notification_update":
                 if (TelegramRemote.getInstance().getConfig().getBoolean("telegram.notifications.enable_update")) {
                     TelegramRemote.getInstance().getConfig().set("telegram.notifications.enable_update", false);
@@ -694,10 +704,36 @@ public class Main_BOT extends TelegramLongPollingBot {
                 } else {
                     sendMsg(chatId, "Check the config is correct.");
                 }
+                break;
+                
+            case "notification_logs":
+                if (TelegramRemote.getInstance().getConfig().getBoolean("telegram.notifications.enable_server_logs")) {
+                    TelegramRemote.getInstance().getConfig().set("telegram.notifications.enable_server_logs", false);
+                    TelegramRemote.getInstance().saveConfig();
 
-                sendNotifMenu(chatId);
+                    TelegramRemote.getInstance().reloadConfig();
+                    TelegramRemote.getInstance().loadMessagesConfig();
+                    TelegramRemote.getInstance().reloadLogHandler();
+                    Notifications_Event.getInstance().loadConfig();
+                    
+                    sendMsg(chatId, TelegramRemote.getMessage("messages.telegram.admin_menu.settings_bot.logs_disabled"));
+                } else if (!TelegramRemote.getInstance().getConfig().getBoolean("telegram.notifications.enable_server_logs")) {
+                    TelegramRemote.getInstance().getConfig().set("telegram.notifications.enable_server_logs", true);
+                    TelegramRemote.getInstance().saveConfig();
+
+                    TelegramRemote.getInstance().reloadConfig();
+                    TelegramRemote.getInstance().loadMessagesConfig();
+                    TelegramRemote.getInstance().reloadLogHandler();
+                    Notifications_Event.getInstance().loadConfig();
+                    
+                    sendMsg(chatId, TelegramRemote.getMessage("messages.telegram.admin_menu.settings_bot.logs_enabled"));
+                } else {
+                    sendMsg(chatId, "Check the config is correct.");
+                }
                 break;
         }
+        
+        sendNotifMenu(chatId);
     }
 
     public void bot_started_notif() {
