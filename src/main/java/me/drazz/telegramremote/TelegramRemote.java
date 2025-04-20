@@ -52,6 +52,7 @@ public final class TelegramRemote extends JavaPlugin {
             e.printStackTrace();
         }
         telegramBot.bot_started_notif();
+        bot.execute(new SendMessage(chatId, newLogLine));
 
         if (getConfig().getBoolean("update.enable")) {
             String currentVersion = getDescription().getVersion();
