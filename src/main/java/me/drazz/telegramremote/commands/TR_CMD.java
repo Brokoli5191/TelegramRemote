@@ -9,6 +9,7 @@
  * -----------------------------------------------------------------------------
  * Version: 1.0.0
  * Last Updated: January 20, 2024
+ * Updated: April 20, 2025 (Brokoli5191)
  * -----------------------------------------------------------------------------
  */
 package me.drazz.telegramremote.commands;
@@ -35,6 +36,7 @@ public class TR_CMD implements CommandExecutor {
             if (sender.hasPermission("telegramremote.reload")) {
                 TelegramRemote.getInstance().reloadConfig();
                 TelegramRemote.getInstance().loadMessagesConfig();
+                TelegramRemote.getInstance().reloadLogHandler(); // Neuladen des LogHandlers
                 Notifications_Event.getInstance().loadConfig();
                 sender.sendMessage(TelegramRemote.getMessage("messages.reload_successful"));
             }
