@@ -18,7 +18,6 @@ import me.drazz.telegramremote.bot.Main_BOT;
 import me.drazz.telegramremote.commands.TR_CMD;
 import me.drazz.telegramremote.commands.TR_TabCompleter;
 import me.drazz.telegramremote.events.Notifications_Event;
-import me.drazz.telegramremote.utils.CheckUpdate; // Hinzugefügt: Import für CheckUpdate
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -48,7 +47,7 @@ public final class TelegramRemote extends JavaPlugin {
 
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(telegramBot); // Geändert: Verwende die bereits erstellte telegramBot-Instanz
+            botsApi.registerBot(telegramBot);
             getLogger().info("Bot launched successfully!");
         } catch (Exception e) {
             getLogger().info("Bot error!");
@@ -56,11 +55,11 @@ public final class TelegramRemote extends JavaPlugin {
         }
         
         telegramBot.bot_started_notif();
-        // Die fehlerhafte Zeile wurde entfernt: bot.execute(new SendMessage(chatId, newLogLine));
 
         if (getConfig().getBoolean("update.enable")) {
             String currentVersion = getDescription().getVersion();
-            CheckUpdate checkUpdate = new CheckUpdate(this, currentVersion);
+            me.drazz.telegramremote.CheckUpdate checkUpdate = 
+                new me.drazz.telegramremote.CheckUpdate(this, currentVersion);
             checkUpdate.checkForUpdateAsync();
         }
 
@@ -69,7 +68,6 @@ public final class TelegramRemote extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Eventuell hier eine Benachrichtigung hinzufügen, wenn der Bot heruntergefahren wird
         getLogger().info("Plugin disabled successfully!");
     }
 
