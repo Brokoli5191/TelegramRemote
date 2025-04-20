@@ -1,20 +1,7 @@
-/**
- * -----------------------------------------------------------------------------
- * Main_BOT.java
- * by drazz
- * -----------------------------------------------------------------------------
- * Description: This class implements a Telegram bot using the TelegramBots API
- * for integration with a Bukkit server. It handles various commands and sends
- * notifications to administrators.
- * -----------------------------------------------------------------------------
- * Version: 1.0.0
- * Last Updated: January 20, 2024
- * Updated: April 20, 2025 (Brokoli5191)
- * -----------------------------------------------------------------------------
- */
 package me.drazz.telegramremote.bot;
 
 import com.github.t9t.minecraftrconclient.RconClient;
+import me.drazz.telegramremote.TelegramLogHandler;
 import me.drazz.telegramremote.TelegramRemote;
 import me.drazz.telegramremote.events.Notifications_Event;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -30,8 +17,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-
-
 import java.util.*;
 
 import static org.bukkit.Bukkit.getLogger;
@@ -40,11 +25,8 @@ public class Main_BOT extends TelegramLongPollingBot {
 
     private static final Map<Long, String> fsmContext = new HashMap<>();
 
-
     @Override
     public void onUpdateReceived(Update update) {
-
-
         if (update.hasMessage() && update.getMessage().hasText()) {
             long chatId = update.getMessage().getChatId();
             String messageText = update.getMessage().getText();
@@ -58,6 +40,9 @@ public class Main_BOT extends TelegramLongPollingBot {
             }
             else if (messageText.equals(TelegramRemote.getMessage("messages.telegram.admin_menu.console_menu"))) {
                 handleConsoleCommand(chatId);
+            }
+            else if (messageText.equals(TelegramRemote.getMessage("messages.telegram.admin_menu.logs_menu"))) {
+                sendLogSettingsMenu(chatId);
             }
             else if (messageText.equals("/quit")) {
                 if (currentState.equals("CONSOLE_MODE")) {
@@ -75,7 +60,6 @@ public class Main_BOT extends TelegramLongPollingBot {
                 if (isAdmin(chatId)) {
                     return;
                 }
-
 
                 try {
                     Long adminId = Long.parseLong(messageText);
@@ -121,7 +105,7 @@ public class Main_BOT extends TelegramLongPollingBot {
             else if ("notifications_button".equals(data) && currentState.equals("BOT_SETTINGS")) {
                 sendNotifMenu(chatId);
             }
-            else if ("notification_op".equals(data) || "notification_started".equals(data) || "notification_update".equals(data) || "notification_logs".equals(data) && currentState.equals("NOTIFICATIONS_MENU")) {
+            else if ("notification_op".equals(data) || "notification_started".equals(data) || "notification_update".equals(data) && currentState.equals("NOTIFICATIONS_MENU")) {
                 changeNotif(chatId, data);
             }
             else if ("admin_add_button".equals(data) && currentState.equals("BOT_SETTINGS")) {
@@ -143,6 +127,18 @@ public class Main_BOT extends TelegramLongPollingBot {
             else if ("shutdown".equals(data) && currentState.equals("ADMIN_MENU")) {
                 sendConfirmShutdown(chatId);
             }
+            else if ("log_settings".equals(data) && currentState.equals("ADMIN_MENU")) {
+                sendLogSettingsMenu(chatId);
+            }
+            else if ("log_mode_disabled".equals(data) && currentState.equals("LOG_SETTINGS")) {
+                changeLogMode(chatId, TelegramLogHandler.LogMode.DISABLED);
+            }
+            else if ("log_mode_important".equals(data) && currentState.equals("LOG_SETTINGS")) {
+                changeLogMode(chatId, TelegramLogHandler.LogMode.IMPORTANT_ONLY);
+            }
+            else if ("log_mode_all".equals(data) && currentState.equals("LOG_SETTINGS")) {
+                changeLogMode(chatId, TelegramLogHandler.LogMode.ALL_LOGS);
+            }
             else if ("confirm_yes_reload".equals(data) && currentState.equals("CONFIRM_RELOAD")) {
                 sendMsg(chatId, TelegramRemote.getMessage("messages.telegram.admin_menu.confirm.reload"));
                 getLogger().info("Reload from Telegram. By " + chatId);
@@ -162,9 +158,7 @@ public class Main_BOT extends TelegramLongPollingBot {
                 sendMsg(chatId, TelegramRemote.getMessage("messages.telegram.admin_menu.confirm.normal_mode"));
                 sendAdminPanel(chatId);
             }
-
         }
-
     }
 
     @Override
@@ -197,6 +191,10 @@ public class Main_BOT extends TelegramLongPollingBot {
         row = new KeyboardRow();
         row.add(new KeyboardButton(TelegramRemote.getMessage("messages.telegram.admin_menu.console_menu")));
         keyboard.add(row);
+        
+        row = new KeyboardRow();
+        row.add(new KeyboardButton(TelegramRemote.getMessage("messages.telegram.admin_menu.logs_menu")));
+        keyboard.add(row);
 
         replyMarkup.setKeyboard(keyboard);
 
@@ -211,7 +209,6 @@ public class Main_BOT extends TelegramLongPollingBot {
             getLogger().info("Message not delivered! ChatID: " + chatId + " " + e.getMessage());
         }
     }
-
 
     private void sendBotSettings(long chatId) {
         if (isAdmin(chatId)) {
@@ -279,8 +276,88 @@ public class Main_BOT extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-
     }
+    
+    private void sendLogSettingsMenu(long chatId) {
+        if (isAdmin(chatId)) {
+            return;
+        }
+        fsmContext.put(chatId, "LOG_SETTINGS");
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        InlineKeyboardButton disabledButton = new InlineKeyboardButton();
+        disabledButton.setText(TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.mode_disabled"));
+        disabledButton.setCallbackData("log_mode_disabled");
+        row1.add(disabledButton);
+        rows.add(row1);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton importantButton = new InlineKeyboardButton();
+        importantButton.setText(TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.mode_important"));
+        importantButton.setCallbackData("log_mode_important");
+        row2.add(importantButton);
+        rows.add(row2);
+
+        List<InlineKeyboardButton> row3 = new ArrayList<>();
+        InlineKeyboardButton allButton = new InlineKeyboardButton();
+        allButton.setText(TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.mode_all"));
+        allButton.setCallbackData("log_mode_all");
+        row3.add(allButton);
+        rows.add(row3);
+
+        inlineKeyboardMarkup.setKeyboard(rows);
+
+        TelegramLogHandler logHandler = TelegramRemote.getInstance().getLogHandler();
+        String currentMode = "UNKNOWN";
+        if (logHandler != null) {
+            currentMode = logHandler.getLogMode().name();
+        }
+
+        String menuText = TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.title") + " " + 
+                TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.current_mode") + " " + 
+                formatLogMode(currentMode);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(menuText);
+        message.setReplyMarkup(inlineKeyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private String formatLogMode(String mode) {
+        switch (mode) {
+            case "DISABLED":
+                return TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.mode_disabled_status");
+            case "IMPORTANT_ONLY":
+                return TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.mode_important_status");
+            case "ALL_LOGS":
+                return TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.mode_all_status");
+            default:
+                return mode;
+        }
+    }
+    
+    private void changeLogMode(long chatId, TelegramLogHandler.LogMode mode) {
+        if (isAdmin(chatId)) {
+            return;
+        }
+        
+        TelegramRemote.getInstance().setLogMode(mode);
+        
+        sendMsg(chatId, TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings.mode_changed") + " " + 
+                formatLogMode(mode.name()));
+        
+        sendLogSettingsMenu(chatId);
+    }
+    
     private void changeConsoleEnable(long chatId) {
         if (isAdmin(chatId)) {
             return;
@@ -380,6 +457,13 @@ public class Main_BOT extends TelegramLongPollingBot {
         bot_settingsButton.setCallbackData("bot_settings");
         row1.add(bot_settingsButton);
         rows.add(row1);
+        
+        List<InlineKeyboardButton> rowLog = new ArrayList<>();
+        InlineKeyboardButton logSettingsButton = new InlineKeyboardButton();
+        logSettingsButton.setText(TelegramRemote.getMessage("messages.telegram.admin_menu.log_settings_button"));
+        logSettingsButton.setCallbackData("log_settings");
+        rowLog.add(logSettingsButton);
+        rows.add(rowLog);
 
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         InlineKeyboardButton reload_pluginButton = new InlineKeyboardButton();
@@ -614,18 +698,6 @@ public class Main_BOT extends TelegramLongPollingBot {
         notificationUpdateButton.setCallbackData("notification_update");
         row3.add(notificationUpdateButton);
         rows.add(row3);
-        
-        // Neue Zeile für Server-Logs
-        List<InlineKeyboardButton> row4 = new ArrayList<>();
-        InlineKeyboardButton notificationLogsButton = new InlineKeyboardButton();
-        if (TelegramRemote.getInstance().getConfig().getBoolean("telegram.notifications.enable_server_logs")) {
-            notificationLogsButton.setText(TelegramRemote.getMessage("messages.telegram.admin_menu.settings_bot.notification_logs") + "✅");
-        } else {
-            notificationLogsButton.setText(TelegramRemote.getMessage("messages.telegram.admin_menu.settings_bot.notification_logs") + "❌");
-        }
-        notificationLogsButton.setCallbackData("notification_logs");
-        row4.add(notificationLogsButton);
-        rows.add(row4);
 
         inlineKeyboardMarkup.setKeyboard(rows);
 
@@ -705,32 +777,6 @@ public class Main_BOT extends TelegramLongPollingBot {
                     sendMsg(chatId, "Check the config is correct.");
                 }
                 break;
-                
-            case "notification_logs":
-                if (TelegramRemote.getInstance().getConfig().getBoolean("telegram.notifications.enable_server_logs")) {
-                    TelegramRemote.getInstance().getConfig().set("telegram.notifications.enable_server_logs", false);
-                    TelegramRemote.getInstance().saveConfig();
-
-                    TelegramRemote.getInstance().reloadConfig();
-                    TelegramRemote.getInstance().loadMessagesConfig();
-                    TelegramRemote.getInstance().reloadLogHandler();
-                    Notifications_Event.getInstance().loadConfig();
-                    
-                    sendMsg(chatId, TelegramRemote.getMessage("messages.telegram.admin_menu.settings_bot.logs_disabled"));
-                } else if (!TelegramRemote.getInstance().getConfig().getBoolean("telegram.notifications.enable_server_logs")) {
-                    TelegramRemote.getInstance().getConfig().set("telegram.notifications.enable_server_logs", true);
-                    TelegramRemote.getInstance().saveConfig();
-
-                    TelegramRemote.getInstance().reloadConfig();
-                    TelegramRemote.getInstance().loadMessagesConfig();
-                    TelegramRemote.getInstance().reloadLogHandler();
-                    Notifications_Event.getInstance().loadConfig();
-                    
-                    sendMsg(chatId, TelegramRemote.getMessage("messages.telegram.admin_menu.settings_bot.logs_enabled"));
-                } else {
-                    sendMsg(chatId, "Check the config is correct.");
-                }
-                break;
         }
         
         sendNotifMenu(chatId);
@@ -784,6 +830,10 @@ public class Main_BOT extends TelegramLongPollingBot {
         row = new KeyboardRow();
         row.add(new KeyboardButton(TelegramRemote.getMessage("messages.telegram.admin_menu.console_menu")));
         keyboard.add(row);
+        
+        row = new KeyboardRow();
+        row.add(new KeyboardButton(TelegramRemote.getMessage("messages.telegram.admin_menu.logs_menu")));
+        keyboard.add(row);
 
         replyMarkup.setKeyboard(keyboard);
 
@@ -824,6 +874,7 @@ public class Main_BOT extends TelegramLongPollingBot {
 
         return false;
     }
+    
     public void sendMsg(long chatId, String messageText) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
@@ -834,6 +885,18 @@ public class Main_BOT extends TelegramLongPollingBot {
         }
         catch (TelegramApiException e) {
             getLogger().info("Message not delivered! ChatID: " + chatId + " " + e.getMessage());
+        }
+    }
+    
+    public void sendSilentMsg(long chatId, String messageText) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(messageText);
+
+        try {
+            execute(message);
+        }
+        catch (TelegramApiException e) {
         }
     }
 }
